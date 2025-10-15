@@ -6,6 +6,25 @@
     <title>Unity WebGL Player | New Unity Project</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+
+    <!-- afegit-->
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<style>
+  html, body { margin:0; padding:0; height:100%; background:#000; }
+  /* Usa unitats modernes per a mòbil */
+  #unity-container, #unity-canvas {
+    width: 100vw;
+    height: 100dvh;  /* millor que 100vh en mòbil */
+    touch-action: none;
+    display: block;
+  }
+  /* Respecta el notch en iOS */
+  @supports (padding: max(0px)) {
+    body { padding: env(safe-area-inset-top) env(safe-area-inset-right)
+                     env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  }
+</style>
+    <!--end afegit-->
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
