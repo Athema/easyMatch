@@ -4,45 +4,50 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity WebGL Player | New Unity Project</title>
-
-    <!-- Vista mòbil i notch / pantalla completa “de veritat” al navegador -->
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
-
-    <!-- (Opcional) PWA: per obrir sense barra quan s’afegeix a pantalla d’inici -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
 
-    <style>
-      /* Fons negre i alçada “real” en iOS */
-      html, body {
-        margin: 0; padding: 0; height: 100%;
-        background: #000;
-        height: -webkit-fill-available;
-      }
-      /* Omple tota la pantalla sense dependre del Fullscreen API */
-      #unity-container { position: fixed; inset: 0; }
-      #unity-canvas {
-        width: 100vw !important;
-        height: 100dvh !important;   /* millor que 100vh en mòbil */
-        display: block;
-        touch-action: none;
-      }
-      /* Respecta el notch i gestos en iOS */
-      @supports (padding: max(0px)) {
-        body { padding: env(safe-area-inset-top) env(safe-area-inset-right)
-                       env(safe-area-inset-bottom) env(safe-area-inset-left); }
-      }
-    </style>
+
+    <!-- Overrides suaus per a mòbil -->
+<style>
+  /* Quan el dispositiu és tàctil (mòbil/tablet), força mida del canvas i posiciona el contenidor */
+  @media (pointer: coarse) {
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #000;
+    }
+    /* El template ja canvia la classe a unity-mobile en mòbil */
+    #unity-container.unity-mobile {
+      position: fixed;
+      left: 0; top: 0; right: 0; bottom: 0;
+    }
+    #unity-canvas.unity-mobile {
+      width: 100vw !important;
+      height: 100dvh !important;   /* alçada real en mòbil */
+      display: block;
+      margin: 0 auto;
+      touch-action: none;
+    }
+    /* Assegura que el footer quedi enganxat a baix i no desplaci el canvas */
+    #unity-footer {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+    }
+    /* Centra el loading mentre carrega */
+    #unity-loading-bar {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+</style>
+
+
+    
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty">
@@ -56,8 +61,8 @@
         <div id="unity-build-title">New Unity Project</div>
       </div>
     </div>
-
     <script>
+
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
       var loadingBar = document.querySelector("#unity-loading-bar");
@@ -65,6 +70,12 @@
       var fullscreenButton = document.querySelector("#unity-fullscreen-button");
       var warningBanner = document.querySelector("#unity-warning");
 
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
@@ -94,13 +105,42 @@
         productName: "New Unity Project",
         productVersion: "0.1",
         showBanner: unityShowBanner,
-        // Si vols baixar DPI al mòbil per guanyar rendiment:
-        // devicePixelRatio: 1,
       };
 
-      // No cal injectar <meta viewport> des d’aquí (ja el tenim al <head>).
-      // Ajustos d’estil per escriptori (mòbil ja va a 100dvh via CSS)
-      if (!/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      // By default, Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      // If you would like all file writes inside Unity Application.persistentDataPath
+      // directory to automatically persist so that the contents are remembered when
+      // the user revisits the site the next time, uncomment the following line:
+      // config.autoSyncPersistentDataPath = true;
+      // This autosyncing is currently not the default behavior to avoid regressing
+      // existing user projects that might rely on the earlier manual
+      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
+      // expected to change.
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        container.className = "unity-mobile";
+        canvas.className = "unity-mobile";
+
+        // To lower canvas resolution on mobile devices to gain some
+        // performance, uncomment the following line:
+        // config.devicePixelRatio = 1;
+
+
+      } else {
+        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
+
         canvas.style.width = "960px";
         canvas.style.height = "600px";
       }
@@ -111,30 +151,19 @@
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = (100 * progress) + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-          fullscreenButton.onclick = () => { unityInstance.SetFullscreen(1); };
-        }).catch((message) => { alert(message); });
-      };
+          progressBarFull.style.width = 100 * progress + "%";
+              }).then((unityInstance) => {
+                loadingBar.style.display = "none";
+                fullscreenButton.onclick = () => {
+                  unityInstance.SetFullscreen(1);
+                };
+              }).catch((message) => {
+                alert(message);
+              });
+            };
+
       document.body.appendChild(script);
 
-      // Força mides a tota pantalla en canvis d’orientació/viewport
-      (function() {
-        function resize() {
-          // Unity 2018/2020 a vegades reescriu mides; reimposa 100vw/100dvh
-          canvas.style.width = '100vw';
-          canvas.style.height = (window.innerHeight || document.documentElement.clientHeight) + 'px';
-        }
-        window.addEventListener('load', resize, {passive:true});
-        window.addEventListener('resize', resize, {passive:true});
-        window.addEventListener('orientationchange', resize, {passive:true});
-
-        // (Opcional) Registra service worker si existeix, per PWA
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('./sw.js').catch(()=>{});
-        }
-      })();
     </script>
   </body>
 </html>
